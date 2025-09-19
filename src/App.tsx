@@ -1,12 +1,10 @@
-import Home from "./components/pages/home";
-import AppProvider from "./providers/AppProvider";
+import AppProvider from './providers/AppProvider';
+import LoginPage from './components/pages/login/Login';
+import Home from './components/pages/home';
 
 function App() {
-  return (
-    <AppProvider>
-      <Home />
-    </AppProvider>
-  );
+  const token = localStorage.getItem('access_token');
+  return <AppProvider>{token ? <Home /> : <LoginPage />}</AppProvider>;
 }
 
 export default App;
