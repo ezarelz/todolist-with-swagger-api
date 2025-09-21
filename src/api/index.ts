@@ -9,7 +9,7 @@ export const customAxios = axios.create({
   },
 });
 
-// ✅ Inject Bearer Token
+//  Inject Bearer Token
 customAxios.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
   if (token) {
@@ -18,13 +18,13 @@ customAxios.interceptors.request.use((config) => {
   return config;
 });
 
-// ✅ Handle 401 → Clear storage + optional redirect
+//  Handle 401 → Clear storage + optional redirect
 customAxios.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
       localStorage.removeItem('access_token');
-      localStorage.removeItem('auth_user'); // tambahkan supaya nama juga clear
+      localStorage.removeItem('auth_user'); // authorisasi cek ke API menambah dan/atau clr storage
       if (location.pathname !== '/login') {
         // redirect opsional
         // window.location.href = '/login';

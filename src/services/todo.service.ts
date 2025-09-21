@@ -1,5 +1,8 @@
+// src/services/todo.service.ts
 import { customAxios } from '../api';
 import type { Todo, NewTodo, TodosEnvelope, TodosQuery } from '../types/Todo';
+
+type UpdateTodoPayload = Partial<NewTodo> & { completed?: boolean };
 
 // GET /todos?page=&limit=&priority=&completed=&sortBy=&order=
 export async function getTodos(
@@ -20,14 +23,26 @@ export async function createTodo(
   return data;
 }
 
-// PATCH /todos/:id
+// PUT /todos/:id  — update fields (title, completed, date, priority)
 export async function updateTodo(
   id: string,
-  payload: Partial<NewTodo> & { completed?: boolean }
+  payload: UpdateTodoPayload
 ): Promise<{ message: string; data: Todo }> {
-  const { data } = await customAxios.patch<{ message: string; data: Todo }>(
+  const { data } = await customAxios.put<{ message: string; data: Todo }>(
     `/todos/${id}`,
     payload
+  );
+  return data;
+}
+
+// Helper: toggle completed only (PUT)
+export async function toggleTodoCompleted(
+  id: string,
+  completed: boolean
+): Promise<{ message: string; data: Todo }> {
+  const { data } = await customAxios.put<{ message: string; data: Todo }>(
+    `/todos/${id}`,
+    { completed }
   );
   return data;
 }

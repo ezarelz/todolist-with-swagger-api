@@ -86,7 +86,7 @@ export default function LoginPage() {
         {mode === 'register' && (
           <div className='space-y-1'>
             <label htmlFor='name' className='text-sm'>
-              Full Name
+              Name
             </label>
             <input
               id='name'
