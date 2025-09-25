@@ -18,6 +18,8 @@ import Modal from '../../ui/modal/Modal';
 import AddTaskForm from '../../container/TodoForm/AddTaskForm';
 import ThemeToggle from '../../ui/ThemeToggle/ThemeToggle';
 import Toast from '../../ui/toast/Toast';
+import ConfirmDialog from '../../ui/confirmdelete/ConfirmDialog';
+import LazyLoader from '../../ui/loader/Loader';
 
 type TabKey = 'today' | 'upcoming' | 'completed';
 type PriorityKey = 'ALL' | Priority;
@@ -40,16 +42,49 @@ export default function Home() {
   const [openAdd, setOpenAdd] = useState(false);
   const [savingAdd, setSavingAdd] = useState(false);
 
-  // Toast
-  const [toast, setToast] = useState<ToastState>({
+  // Toast (controlled)
+  const [toast, setToastState] = useState<ToastState>({
     open: false,
     type: 'info',
     message: '',
   });
-
   const showToast = (type: ToastState['type'], message: string) =>
-    setToast({ open: true, type, message });
+    setToastState({ open: true, type, message });
+  const hideToast = () => setToastState((t) => ({ ...t, open: false }));
 
+  // Confirm delete dialog
+  const [confirm, setConfirm] = useState<{
+    open: boolean;
+    id?: string;
+    loading: boolean;
+  }>({ open: false, id: undefined, loading: false });
+
+  const askDelete = (id: string) =>
+    setConfirm({ open: true, id, loading: false });
+
+  const confirmDelete = async () => {
+    if (!confirm.id) return;
+    const id = confirm.id;
+
+    // optimistic remove
+    const snapshot = todos;
+    setConfirm((c) => ({ ...c, loading: true }));
+    setTodos((prev) => prev.filter((t) => t.id !== id));
+
+    try {
+      await deleteTodo(id);
+      showToast('success', 'Task deleted');
+    } catch (err) {
+      // rollback jika gagal
+      setTodos(snapshot);
+      showToast('error', 'Failed to delete task');
+      console.error(err);
+    } finally {
+      setConfirm({ open: false, id: undefined, loading: false });
+    }
+  };
+
+  // Load user
   useEffect(() => {
     try {
       const raw = localStorage.getItem('auth_user');
@@ -83,36 +118,17 @@ export default function Home() {
 
   // Toggle completed (optimistic + sync)
   const handleToggleCompleted = async (id: string, nextCompleted: boolean) => {
-    // Optimistic UI
     setTodos((prev) =>
       prev.map((t) => (t.id === id ? { ...t, completed: nextCompleted } : t))
     );
-
     try {
       const server = await toggleTodoCompleted(id, nextCompleted);
-      // Sync dengan response server (timestamps dsb.)
       setTodos((prev) => prev.map((t) => (t.id === id ? server : t)));
     } catch (err) {
-      // Rollback
       setTodos((prev) =>
         prev.map((t) => (t.id === id ? { ...t, completed: !nextCompleted } : t))
       );
       showToast('error', 'Failed to update task status');
-      console.error(err);
-    }
-  };
-
-  // Delete todo
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this task?')) return;
-    const snapshot = todos;
-    setTodos((prev) => prev.filter((t) => t.id !== id));
-    try {
-      await deleteTodo(id);
-      showToast('success', 'Task deleted');
-    } catch (err) {
-      setTodos(snapshot);
-      showToast('error', 'Failed to delete task');
       console.error(err);
     }
   };
@@ -128,12 +144,11 @@ export default function Home() {
       if (tab === 'completed') return !!t.completed;
       if (tab === 'today')
         return !t.completed && d.getTime() === today.getTime();
-      return !t.completed && d.getTime() > today.getTime(); // upcoming
+      return !t.completed && d.getTime() > today.getTime();
     });
 
     const byPrio =
       prio === 'ALL' ? byTab : byTab.filter((t) => t.priority === prio);
-
     const q = query.trim().toLowerCase();
     return q ? byPrio.filter((t) => t.title.toLowerCase().includes(q)) : byPrio;
   }, [todos, tab, prio, query]);
@@ -200,9 +215,7 @@ export default function Home() {
         {/* List */}
         <div className='space-y-3'>
           {loading ? (
-            <div className='border rounded-xl p-4 text-center border-[color:var(--border)]'>
-              Loading todos...
-            </div>
+            <LazyLoader count={4} />
           ) : filtered.length === 0 ? (
             <div className='border border-dashed rounded-xl p-10 text-center border-[color:var(--border)]'>
               <p className='font-medium'>No todos found</p>
@@ -216,7 +229,7 @@ export default function Home() {
                 key={t.id}
                 todo={t}
                 onToggle={handleToggleCompleted}
-                onDelete={handleDelete}
+                onDelete={askDelete} // <-- buka dialog, tidak langsung delete
                 onEdited={(updated) =>
                   setTodos((prev) =>
                     prev.map((x) => (x.id === updated.id ? updated : x))
@@ -238,7 +251,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Modal Add (pakai ID dari server, no crypto.randomUUID) */}
+      {/* Modal Add */}
       <Modal open={openAdd} onClose={() => setOpenAdd(false)} title='Add Task'>
         <AddTaskForm
           saving={savingAdd}
@@ -246,13 +259,11 @@ export default function Home() {
           onSubmit={async ({ title, priority, date }) => {
             try {
               setSavingAdd(true);
-
               const created = await createTodo({
                 title,
                 priority,
                 date: new Date(date).toISOString(),
               });
-
               setTodos((prev) => [created, ...prev]);
               setOpenAdd(false);
               showToast('success', 'Task created');
@@ -266,12 +277,26 @@ export default function Home() {
         />
       </Modal>
 
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        open={confirm.open}
+        loading={confirm.loading}
+        title='Delete To-Do'
+        description='Do you want to delete this?'
+        confirmText='Delete'
+        cancelText='Cancel'
+        onCancel={() =>
+          setConfirm({ open: false, id: undefined, loading: false })
+        }
+        onConfirm={confirmDelete}
+      />
+
       {/* Toast */}
       <Toast
         open={toast.open}
         type={toast.type}
         message={toast.message}
-        onClose={() => setToast((t) => ({ ...t, open: false }))}
+        onClose={hideToast}
       />
     </div>
   );

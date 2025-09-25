@@ -89,13 +89,15 @@ export default function TodoItem({
               setEditOpen(true);
             }}
           >
-            ✏️ Edit
+            <img src='/icons/edit.svg' alt='Edit' className='w-4 h-4' />
+            <span>Edit</span>
           </button>
           <button
             className='w-full text-left px-3 py-2 rounded-lg hover:bg-[color:var(--foreground)]/5 text-pink-400 flex items-center gap-2'
             onClick={() => onDelete(todo.id)}
           >
-            🗑️ Delete
+            <img src='/icons/delete.svg' alt='Delete' className='w-4 h-4' />
+            <span>Delete</span>
           </button>
         </div>
       )}
@@ -123,10 +125,8 @@ export default function TodoItem({
                 date: new Date(date).toISOString(),
               };
 
-              // Update ke server; kita tak mengandalkan shape respons dulu.
               await updateTodo(todo.id, payload);
 
-              // Optimistik: bentuk Todo penuh dari todo lama + payload
               const updated: Todo = {
                 ...todo,
                 ...payload,

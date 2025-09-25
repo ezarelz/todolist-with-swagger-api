@@ -38,6 +38,7 @@
   --muted: #b2b6bd;
   --surface: #ffffff;
   --border: #e5e7eb;
+  --icon-filter: invert(1); /* putih -> hitam di light */
 }
 
 /* Dark via class di <html> */
@@ -47,6 +48,7 @@
   --muted: #a1a1aa;
   --surface: #0c0000;
   --border: #2a2a2a;
+  --icon-filter: none;
 }
 
 html {
@@ -84,6 +86,12 @@ select option {
 input[type='date']::-webkit-calendar-picker-indicator {
   opacity: 0;
   display: none;
+}
+
+/* Utility untuk dipakai di <img> icon */
+.icon-themesafe {
+  filter: var(--icon-filter);
+  transition: filter 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
 }
 
 /* Optional: smooth theme switch (aktifkan saat klik toggle) */
