@@ -23,3 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 .env.production
+
+
+#files
+index-copy.html
+readme.md

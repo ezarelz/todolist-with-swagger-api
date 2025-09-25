@@ -2,7 +2,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import AppProvider from './providers/AppProvider';
 import LoginPage from './components/pages/login/Login';
-import RegisterPage from './components/pages/register/Register'; // sesuaikan jika file-mu di folder lain
+import RegisterPage from './components/pages/register/Register';
 import Home from './components/pages/home';
 
 const hasToken = () => Boolean(localStorage.getItem('access_token'));

@@ -1,30 +1,52 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Set theme by class only (ignore OS). Default = light -->
-    <script>
-      (function () {
-        var saved = localStorage.getItem('theme'); // 'light' | 'dark' | null
-        var root = document.documentElement;
+  <!-- 🔑 SEO Metadata -->
+  <title>Todo API | Modern React To-Do List</title>
+  <meta
+    name="description"
+    content="A modern Todo List web app built with React, TypeScript, and Tailwind CSS. Manage tasks, set priorities, and stay productive with this clean, responsive UI."
+  />
+  <meta
+    name="keywords"
+    content="todo app, react todo, typescript todo, task manager, productivity app, tailwind css, vite project"
+  />
+  <meta name="author" content="Manggala Eleazar" />
 
-        if (saved === 'dark') {
-          root.classList.add('dark');
-          root.style.colorScheme = 'dark';
-        } else {
-          root.classList.remove('dark'); // default light
-          root.style.colorScheme = 'light';
-        }
-      })();
-    </script>
+  <!-- 📱 Social Preview / Open Graph -->
+  <meta property="og:title" content="React + TypeScript Todo App" />
+  <meta
+    property="og:description"
+    content="Track tasks, set deadlines, and stay organized with this modern, responsive Todo List app."
+  />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="" />
 
-    <title>Challenge 8 - Todo API</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+  <!-- 🐦 Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="React + TypeScript Todo App" />
+  <meta
+    name="twitter:description"
+    content="A clean, simple, and mobile-friendly Todo List web app."
+  />
+
+  <!-- 🎨 Theme Color for PWA / Mobile -->
+  <meta name="theme-color" content="#ffffff" />
+
+  <!-- Script for theme switch tetap dipertahankan -->
+  <script>
+    (function () {
+      var saved = localStorage.getItem('theme');
+      var root = document.documentElement;
+      if (saved === 'dark') {
+        root.classList.add('dark');
+        root.style.colorScheme = 'dark';
+      } else {
+        root.classList.remove('dark');
+        root.style.colorScheme = 'light';
+      }
+    })();
+  </script>
+</head>
