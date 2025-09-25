@@ -27,4 +27,4 @@ dist-ssr
 
 #files
 index-copy.html
-readme.md
+/README.md
