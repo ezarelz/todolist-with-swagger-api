@@ -1,17 +1,21 @@
-// src/types/todo.ts
+// src/types/Todo.ts
+
+/** Priority sesuai API */
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH';
 
+/** Bentuk todo yang dipakai di FE (flat) */
 export interface Todo {
   id: string;
   title: string;
   completed: boolean;
-  date: string; // ISO string
+  date: string;
   priority: Priority;
   userId: string;
   createdAt: string;
   updatedAt: string;
 }
 
+/** Envelope untuk list response (sesuaikan bila backend berbeda) */
 export interface TodosEnvelope {
   success: boolean;
   message: string;
@@ -23,19 +27,27 @@ export interface TodosEnvelope {
   };
 }
 
-// make all optional so you can pass only what you need
+/** Query params GET /todos */
 export interface TodosQuery {
-  page?: number;
-  limit?: number;
-  priority?: Priority;
   completed?: boolean;
-  sortBy?: 'date' | 'createdAt' | 'priority';
+  priority?: Priority;
+  dateGte?: string; // ISO (>=)
+  dateLte?: string; // ISO (<=)
+  page?: number; // default 1
+  limit?: number; // default 10
+  sort?: 'date' | 'createdAt' | 'priority';
   order?: 'asc' | 'desc';
 }
 
+/** Payload create */
 export interface NewTodo {
   title: string;
-  completed: boolean;
   date: string; // ISO
   priority: Priority;
+  completed?: boolean; // default false jika tidak dikirim
 }
+
+/** Payload update (partial PUT/PATCH) */
+export type UpdateTodo = Partial<
+  Pick<Todo, 'title' | 'completed' | 'date' | 'priority'>
+>;

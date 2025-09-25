@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-/* ==================== SF PRO DISPLAY ==================== */
+/* ==================== FONTS: SF PRO DISPLAY ==================== */
 @font-face {
   font-family: 'SF Pro Display';
   src: url('/fonts/SFPro/SFProDisplayRegular.otf') format('opentype');
@@ -30,31 +30,65 @@
   font-display: swap;
 }
 
-/* ==================== GLOBAL STYLES ==================== */
+/* ==================== THEME TOKENS ==================== */
+/* Light (default) */
+:root {
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --muted: #b2b6bd;
+  --surface: #ffffff;
+  --border: #e5e7eb;
+}
+
+/* Dark via class di <html> */
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --muted: #a1a1aa;
+  --surface: #0c0000;
+  --border: #2a2a2a;
+}
+
+html {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
+}
 
 html {
   scroll-behavior: smooth;
-  /* enable both schemes so native controls (scrollbar, inputs) adapt */
-  color-scheme: light dark;
 }
 
 body {
-  /* Light mode default */
-  @apply bg-white text-gray-900;
+  background: var(--background);
+  color: var(--foreground);
   font-family: 'SF Pro Display', system-ui, -apple-system, BlinkMacSystemFont,
     'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-
-  /* nicer rendering */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   min-height: 100dvh;
 }
 
-/* Dark mode via class on <html> */
-.dark body {
-  @apply bg-black text-white;
+select {
+  background-color: var(--surface);
 }
 
-/* Optional: smoother theme switch (add/remove this class briefly if needed) */
-/* .theme-transition * { transition: background-color .2s, color .2s, border-color .2s; } */
+/* style option supaya readable */
+select option {
+  background-color: var(--surface);
+  color: var(--foreground);
+}
+
+input[type='date']::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  display: none;
+}
+
+/* Optional: smooth theme switch (aktifkan saat klik toggle) */
+html.theme-transition,
+html.theme-transition * {
+  transition: background-color 0.25s ease, color 0.25s ease,
+    border-color 0.25s ease !important;
+}

@@ -1,65 +1,68 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
-import { login } from '../../../services/auth.service';
+import { register as registerApi } from '../../../services/auth.service';
 import {
-  loginSchema,
-  type LoginFields,
+  registerSchema,
+  type RegisterFields,
 } from '../../../lib/validation/Auth.validation';
-import type { LoginResponse, AuthUser } from '../../../types/Auth';
 
 type ApiError = { message?: string; error?: string; statusCode?: number };
 
-function readableError(err: unknown, fallbackBadCreds = false): string {
+function readableError(err: unknown): string {
   const ax = err as AxiosError<ApiError>;
   const status = ax?.response?.status;
   const apiMsg = ax?.response?.data?.message || ax?.response?.data?.error;
   if (!status) return 'Network error, please check your connection.';
-  if (fallbackBadCreds && status === 400) return 'Invalid email or password';
   if (status >= 500)
     return `Server error, please try again later. (status: ${status})`;
   return apiMsg ? String(apiMsg) : `Request failed (status: ${status})`;
 }
 
-export default function LoginPage() {
+export default function RegisterPage() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
+  const [showPw2, setShowPw2] = useState(false);
 
   const [errorMsg, setErrorMsg] = useState('');
   const [fieldErr, setFieldErr] = useState<
-    Partial<Record<keyof LoginFields, string>>
+    Partial<Record<keyof RegisterFields, string>>
   >({});
 
   const validate = () => {
-    const res = loginSchema.safeParse({ email, password });
+    const res = registerSchema.safeParse({
+      name,
+      email,
+      password,
+      confirmPassword,
+    });
     if (res.success) {
       setFieldErr({});
       return true;
     }
-    const next: Partial<Record<keyof LoginFields, string>> = {};
+    const next: Partial<Record<keyof RegisterFields, string>> = {};
     res.error.issues.forEach((i) => {
-      const k = i.path[0] as keyof LoginFields;
+      const k = i.path[0] as keyof RegisterFields;
       next[k] = i.message;
     });
     setFieldErr(next);
     return false;
   };
 
-  const loginMut = useMutation<
-    LoginResponse,
+  const registerMut = useMutation<
+    unknown,
     AxiosError<ApiError>,
-    { email: string; password: string }
+    { name: string; email: string; password: string }
   >({
-    mutationFn: (payload) => login(payload),
-    onSuccess: (res) => {
-      const token = res.data?.token ?? res.token;
-      if (token) localStorage.setItem('access_token', token);
-      const user: AuthUser | undefined = res.data?.user;
-      if (user) localStorage.setItem('auth_user', JSON.stringify(user));
-      window.location.reload();
+    mutationFn: (payload) => registerApi(payload),
+    onSuccess: () => {
+      // arahkan ke login setelah sukses
+      window.location.href = '/login';
     },
-    onError: (err) => setErrorMsg(readableError(err, true)),
+    onError: (err) => setErrorMsg(readableError(err)),
   });
 
   const handleSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
@@ -67,10 +70,14 @@ export default function LoginPage() {
     setErrorMsg('');
     if (!validate()) return;
 
-    loginMut.mutate({ email: email.trim(), password: password.trim() });
+    registerMut.mutate({
+      name: name.trim(),
+      email: email.trim(),
+      password: password.trim(),
+    });
   };
 
-  const isSubmitting = loginMut.isPending;
+  const isSubmitting = registerMut.isPending;
   const inputBase =
     'w-full rounded-lg border px-3 py-2 bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-700 outline-none focus:ring-2 focus:ring-blue-500/40';
   const errorBorder = 'border-pink-500 focus:ring-pink-400';
@@ -82,10 +89,26 @@ export default function LoginPage() {
         className='w-full max-w-sm rounded-2xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 shadow-sm space-y-4'
       >
         <div>
-          <h1 className='text-2xl font-bold'>Login</h1>
+          <h1 className='text-2xl font-bold'>Register</h1>
           <p className='text-sm text-gray-500 dark:text-white/60'>
-            Welcome back! Stay on top of your tasks and goals
+            Create your free account and start achieving more today
           </p>
+        </div>
+
+        <div className='space-y-1'>
+          <label htmlFor='name' className='text-sm'>
+            Name
+          </label>
+          <input
+            id='name'
+            className={`${inputBase} ${fieldErr.name ? errorBorder : ''}`}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder='John Doe'
+          />
+          {fieldErr.name && (
+            <p className='text-xs text-pink-400'>{fieldErr.name}</p>
+          )}
         </div>
 
         <div className='space-y-1'>
@@ -133,6 +156,34 @@ export default function LoginPage() {
           )}
         </div>
 
+        <div className='space-y-1'>
+          <label htmlFor='confirm' className='text-sm'>
+            Confirm Password
+          </label>
+          <div className='relative'>
+            <input
+              id='confirm'
+              type={showPw2 ? 'text' : 'password'}
+              className={`${inputBase} pr-10 ${
+                fieldErr.confirmPassword ? errorBorder : ''
+              }`}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder='••••••••'
+            />
+            <button
+              type='button'
+              onClick={() => setShowPw2((v) => !v)}
+              className='absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md hover:bg-white/10'
+            >
+              <img src='/icons/eye.svg' alt='toggle confirm password' />
+            </button>
+          </div>
+          {fieldErr.confirmPassword && (
+            <p className='text-xs text-pink-400'>{fieldErr.confirmPassword}</p>
+          )}
+        </div>
+
         {errorMsg && <p className='text-sm text-pink-400'>{errorMsg}</p>}
 
         <button
@@ -140,13 +191,13 @@ export default function LoginPage() {
           disabled={isSubmitting}
           className='w-full rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-2'
         >
-          {isSubmitting ? 'Signing In…' : 'Login'}
+          {isSubmitting ? 'Submitting…' : 'Submit'}
         </button>
 
         <p className='text-center text-sm'>
-          Don’t have an account?{' '}
-          <a className='text-blue-600 underline' href='/register'>
-            Register
+          Already have an account?{' '}
+          <a className='text-blue-600 underline' href='/login'>
+            Log in
           </a>
         </p>
       </form>

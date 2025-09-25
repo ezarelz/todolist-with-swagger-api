@@ -5,12 +5,19 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- TOGGLE SWITCH DARK / LIGHT MODE -->
+    <!-- Set theme by class only (ignore OS). Default = light -->
     <script>
       (function () {
-        var saved = localStorage.getItem('theme');
-        if (!saved || saved === 'dark')
-          document.documentElement.classList.add('dark');
+        var saved = localStorage.getItem('theme'); // 'light' | 'dark' | null
+        var root = document.documentElement;
+
+        if (saved === 'dark') {
+          root.classList.add('dark');
+          root.style.colorScheme = 'dark';
+        } else {
+          root.classList.remove('dark'); // default light
+          root.style.colorScheme = 'light';
+        }
       })();
     </script>
 
