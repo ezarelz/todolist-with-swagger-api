@@ -5,9 +5,8 @@ import { login } from '../../../services/auth.service';
 import {
   loginSchema,
   type LoginFields,
-} from '../../../lib/validation/Auth.validation';
+} from '../../../lib/validation/auth.validation';
 import type { LoginResponse, AuthUser } from '../../../types/Auth';
-//testing
 type ApiError = { message?: string; error?: string; statusCode?: number };
 
 function readableError(err: unknown, fallbackBadCreds = false): string {

@@ -5,7 +5,7 @@ import { register as registerApi } from '../../../services/auth.service';
 import {
   registerSchema,
   type RegisterFields,
-} from '../../../lib/validation/Auth.validation';
+} from '../../../lib/validation/auth.validation';
 
 type ApiError = { message?: string; error?: string; statusCode?: number };
 
