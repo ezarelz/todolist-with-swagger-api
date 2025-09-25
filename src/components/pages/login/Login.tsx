@@ -7,7 +7,7 @@ import {
   type LoginFields,
 } from '../../../lib/validation/Auth.validation';
 import type { LoginResponse, AuthUser } from '../../../types/Auth';
-
+//testing
 type ApiError = { message?: string; error?: string; statusCode?: number };
 
 function readableError(err: unknown, fallbackBadCreds = false): string {
