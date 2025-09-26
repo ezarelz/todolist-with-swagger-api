@@ -27,4 +27,5 @@ dist-ssr
 
 #files
 index-copy.html
-/README.md
+README.md
+fallback.txt

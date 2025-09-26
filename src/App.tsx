@@ -18,13 +18,13 @@ export default function App() {
   return (
     <AppProvider>
       <Routes>
-        {/* root: arahkan sesuai status login */}
+        {/* root */}
         <Route
           path='/'
           element={<Navigate to={hasToken() ? '/home' : '/login'} replace />}
         />
 
-        {/* public pages (redirect kalau sudah login) */}
+        {/* initial page (Login To Use TO do App) */}
         <Route
           path='/login'
           element={
@@ -42,7 +42,7 @@ export default function App() {
           }
         />
 
-        {/* protected page */}
+        {/* after login */}
         <Route
           path='/home'
           element={
@@ -51,9 +51,6 @@ export default function App() {
             </RequireAuth>
           }
         />
-
-        {/* fallback 404 */}
-        <Route path='*' element={<Navigate to='/' replace />} />
       </Routes>
     </AppProvider>
   );
