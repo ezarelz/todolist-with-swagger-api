@@ -38,9 +38,11 @@ export default function TodoItem({
       <div className='flex items-center gap-3'>
         <input
           type='checkbox'
-          className='size-5 rounded-md accent-blue-600 cursor-pointer'
+          className={`size-5 rounded-md accent-blue-600 cursor-pointer 
+    ${todo.completed ? 'opacity-50 cursor-not-allowed' : ''}`}
           checked={todo.completed}
           onChange={(e) => onToggle(todo.id, e.target.checked)}
+          disabled={todo.completed} // ✅ disable jika sudah complete
         />
         <div>
           <p
