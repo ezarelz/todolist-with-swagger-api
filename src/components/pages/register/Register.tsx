@@ -55,11 +55,10 @@ export default function RegisterPage() {
   const registerMut = useMutation<
     unknown,
     AxiosError<ApiError>,
-    { name: string; email: string; password: string }
+    { name: string; email: string; password: string; confirmPassword: string }
   >({
     mutationFn: (payload) => registerApi(payload),
     onSuccess: () => {
-      // arahkan ke login setelah sukses
       window.location.href = '/login';
     },
     onError: (err) => setErrorMsg(readableError(err)),
@@ -74,6 +73,7 @@ export default function RegisterPage() {
       name: name.trim(),
       email: email.trim(),
       password: password.trim(),
+      confirmPassword: confirmPassword.trim(),
     });
   };
 

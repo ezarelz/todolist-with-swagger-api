@@ -1,21 +1,23 @@
-// src/types/Todo.ts
-
 /** Priority sesuai API */
-export type Priority = 'LOW' | 'MEDIUM' | 'HIGH';
+export type Priority = 'low' | 'medium' | 'high';
 
-/** Bentuk todo yang dipakai di FE (flat) */
+/** Struktur utama todo */
 export interface Todo {
   id: string;
-  title: string;
+  task: string;
   completed: boolean;
-  date: string;
+  /** Tanggal target (misal deadline) */
+  date: string; // format ISO: "YYYY-MM-DD"
   priority: Priority;
-  userId: string;
+
+  /** Optional relasi user (jika multi-user system) */
+  userId?: string;
+
   createdAt: string;
   updatedAt: string;
 }
 
-/** Envelope untuk list response (sesuaikan bila backend berbeda) */
+/** Envelope respons umum (misal untuk list atau paginated data) */
 export interface TodosEnvelope {
   success: boolean;
   message: string;
@@ -23,31 +25,38 @@ export interface TodosEnvelope {
     todos: Todo[];
     totalTodos: number;
     hasNextPage: boolean;
-    nextPage: number;
+    nextPage: number | null;
   };
 }
 
-/** Query params GET /todos */
+/** Query params untuk endpoint GET /todos */
 export interface TodosQuery {
   completed?: boolean;
   priority?: Priority;
-  dateGte?: string; // ISO (>=)
-  dateLte?: string; // ISO (<=)
-  page?: number; // default 1
-  limit?: number; // default 10
+  dateGte?: string; // filter >= tanggal tertentu (ISO)
+  dateLte?: string; // filter <= tanggal tertentu (ISO)
+  page?: number;
+  limit?: number;
   sort?: 'date' | 'createdAt' | 'priority';
   order?: 'asc' | 'desc';
 }
 
-/** Payload create */
+/** Payload untuk membuat todo baru (POST /todos) */
 export interface NewTodo {
-  title: string;
-  date: string; // ISO
-  priority: Priority;
-  completed?: boolean; // default false jika tidak dikirim
+  task: string;
+  priority?: Priority;
+  date: string; // format "YYYY-MM-DD"
 }
 
-/** Payload update (partial PUT/PATCH) */
+/** Payload untuk update todo (PATCH /todos/:id) */
 export type UpdateTodo = Partial<
-  Pick<Todo, 'title' | 'completed' | 'date' | 'priority'>
+  Pick<Todo, 'task' | 'completed' | 'date' | 'priority'>
 >;
+
+/** Payload untuk hapus todo (DELETE /todos/:id)
+ *  localOnly digunakan oleh FE-only mode (tanpa request ke server)
+ */
+export interface DeleteTodoPayload {
+  id: string;
+  localOnly?: boolean;
+}

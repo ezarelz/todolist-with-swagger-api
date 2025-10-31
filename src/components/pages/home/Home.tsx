@@ -1,13 +1,13 @@
-// src/components/pages/home/Home.tsx
 import { useEffect, useMemo, useState } from 'react';
 import type { AuthUser } from '../../../types/Auth';
 import type { Todo, Priority } from '../../../types/Todo';
 
 import {
-  getTodos,
+  getAllTodos,
+  getTodosCompleted,
   createTodo,
   toggleTodoCompleted,
-  deleteTodo,
+  deleteTodo, // ✅ tambah import deleteTodo
 } from '../../../services/todo.service';
 
 import TopBar from '../../container/Tabs/Topbar';
@@ -35,105 +35,128 @@ export default function Home() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // UI state
+  // UI states
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState<TabKey>('today');
   const [prio, setPrio] = useState<PriorityKey>('ALL');
   const [openAdd, setOpenAdd] = useState(false);
   const [savingAdd, setSavingAdd] = useState(false);
 
-  // Toast (controlled)
-  const [toast, setToastState] = useState<ToastState>({
+  // Toast
+  const [toast, setToast] = useState<ToastState>({
     open: false,
     type: 'info',
     message: '',
   });
   const showToast = (type: ToastState['type'], message: string) =>
-    setToastState({ open: true, type, message });
-  const hideToast = () => setToastState((t) => ({ ...t, open: false }));
+    setToast({ open: true, type, message });
+  const hideToast = () => setToast((t) => ({ ...t, open: false }));
 
-  // Confirm delete dialog
+  // Confirm delete
   const [confirm, setConfirm] = useState<{
     open: boolean;
     id?: string;
     loading: boolean;
-  }>({ open: false, id: undefined, loading: false });
-
+  }>({
+    open: false,
+    id: undefined,
+    loading: false,
+  });
   const askDelete = (id: string) =>
     setConfirm({ open: true, id, loading: false });
 
+  /** ✅ Confirm delete — now calls backend DELETE /todos/:id */
   const confirmDelete = async () => {
     if (!confirm.id) return;
-    const id = confirm.id;
-
-    // optimistic remove
-    const snapshot = todos;
     setConfirm((c) => ({ ...c, loading: true }));
-    setTodos((prev) => prev.filter((t) => t.id !== id));
-
     try {
-      await deleteTodo(id);
-      showToast('success', 'Task deleted');
+      await deleteTodo(confirm.id); // ✅ call backend
+      setTodos((prev) => prev.filter((t) => t.id !== confirm.id));
+      showToast('success', 'Task deleted successfully');
     } catch (err) {
-      // rollback jika gagal
-      setTodos(snapshot);
-      showToast('error', 'Failed to delete task');
       console.error(err);
+      showToast('error', 'Failed to delete task');
     } finally {
       setConfirm({ open: false, id: undefined, loading: false });
     }
   };
 
-  // Load user
+  // ✅ Load user (keep simple, fallback handled by TopBar)
   useEffect(() => {
     try {
       const raw = localStorage.getItem('auth_user');
-      setUser(raw ? (JSON.parse(raw) as AuthUser) : null);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setUser(parsed.user ?? parsed);
+      }
     } catch {
       setUser(null);
     }
   }, []);
 
-  // Fetch todos awal
+  // Fetch todos by tab
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        const list = await getTodos({
-          page: 1,
-          limit: 20,
-          sort: 'date',
-          order: 'asc',
-        });
-        setTodos(list);
+        let list: Todo[] = [];
+
+        if (tab === 'completed') {
+          list = await getTodosCompleted();
+        } else {
+          list = await getAllTodos();
+        }
+
+        // Optional: local filter for deleted IDs
+        const deletedIds = JSON.parse(
+          localStorage.getItem('deletedTodos') || '[]'
+        );
+        const filtered = list.filter((t) => !deletedIds.includes(t.id));
+
+        // ✅ Restore completed state (local override)
+        const completedState = JSON.parse(
+          localStorage.getItem('completedState') || '{}'
+        );
+        const merged = filtered.map((t) =>
+          completedState[t.id] !== undefined
+            ? { ...t, completed: completedState[t.id] }
+            : t
+        );
+
+        setTodos(merged);
       } catch (err) {
-        setTodos([]);
-        showToast('error', 'Failed to load todos');
         console.error(err);
+        showToast('error', 'Failed to load todos');
+        setTodos([]);
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [tab]);
 
-  // Toggle completed (optimistic + sync)
-  const handleToggleCompleted = async (id: string, nextCompleted: boolean) => {
+  // ✅ Toggle complete
+  const handleToggleCompleted = (id: string, nextCompleted: boolean) => {
     setTodos((prev) =>
       prev.map((t) => (t.id === id ? { ...t, completed: nextCompleted } : t))
     );
-    try {
-      const server = await toggleTodoCompleted(id, nextCompleted);
-      setTodos((prev) => prev.map((t) => (t.id === id ? server : t)));
-    } catch (err) {
-      setTodos((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, completed: !nextCompleted } : t))
-      );
-      showToast('error', 'Failed to update task status');
-      console.error(err);
-    }
+
+    const completedState = JSON.parse(
+      localStorage.getItem('completedState') || '{}'
+    );
+    completedState[id] = nextCompleted;
+    localStorage.setItem('completedState', JSON.stringify(completedState));
+
+    toggleTodoCompleted(id, nextCompleted)
+      .then(() =>
+        showToast(
+          'success',
+          nextCompleted ? 'Marked complete' : 'Marked incomplete'
+        )
+      )
+      .catch(() => showToast('info', 'Offline toggle saved locally'));
   };
 
-  // Filtered view for Today / Upcoming / Completed
+  // Filter todos
   const filtered = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -141,6 +164,7 @@ export default function Home() {
     const byTab = todos.filter((t) => {
       const d = new Date(t.date);
       d.setHours(0, 0, 0, 0);
+
       if (tab === 'completed') return !!t.completed;
       if (tab === 'today')
         return !t.completed && d.getTime() === today.getTime();
@@ -150,13 +174,12 @@ export default function Home() {
     const byPrio =
       prio === 'ALL' ? byTab : byTab.filter((t) => t.priority === prio);
     const q = query.trim().toLowerCase();
-    return q ? byPrio.filter((t) => t.title.toLowerCase().includes(q)) : byPrio;
+    return q ? byPrio.filter((t) => t.task.toLowerCase().includes(q)) : byPrio;
   }, [todos, tab, prio, query]);
 
   return (
     <div className='min-h-dvh flex flex-col items-center bg-[var(--background)] text-[var(--foreground)] px-4'>
       <div className='w-full max-w-3xl py-6 space-y-6'>
-        {/* App topbar */}
         <TopBar
           userName={user?.name}
           onLogout={() => {
@@ -164,8 +187,6 @@ export default function Home() {
             window.location.reload();
           }}
         />
-
-        {/* Headline + Theme toggle (kanan) */}
         <div className='flex items-start justify-between gap-4'>
           <div>
             <h2 className='text-2xl sm:text-3xl font-extrabold'>
@@ -178,41 +199,15 @@ export default function Home() {
           <ThemeToggle />
         </div>
 
-        {/* Search + Priority */}
         <SearchPriority
           query={query}
           onQuery={setQuery}
           prio={prio}
           onPrio={setPrio}
         />
-
-        {/* Tabs */}
         <TabsBar tab={tab} onTab={setTab} />
 
-        {/* List header */}
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-2'>
-            <h3 className='text-lg font-semibold'>
-              {tab === 'today'
-                ? 'Today'
-                : tab === 'upcoming'
-                ? 'Upcoming'
-                : 'Completed'}
-            </h3>
-            <span className='text-xs rounded-lg px-2 py-1 bg-[color:var(--foreground)]/6 text-[color:var(--foreground)]/80'>
-              {filtered.length} Item
-            </span>
-          </div>
-          <span className='text-xs text-[color:var(--foreground)]/60'>
-            {new Date().toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            })}
-          </span>
-        </div>
-
-        {/* List */}
+        {/* === Todos list === */}
         <div className='space-y-3'>
           {loading ? (
             <LazyLoader count={4} />
@@ -229,7 +224,7 @@ export default function Home() {
                 key={t.id}
                 todo={t}
                 onToggle={handleToggleCompleted}
-                onDelete={askDelete} // <-- buka dialog, tidak langsung delete
+                onDelete={askDelete}
                 onEdited={(updated) =>
                   setTodos((prev) =>
                     prev.map((x) => (x.id === updated.id ? updated : x))
@@ -251,7 +246,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Modal Add */}
+      {/* === Add Modal === */}
       <Modal open={openAdd} onClose={() => setOpenAdd(false)} title='Add Task'>
         <AddTaskForm
           saving={savingAdd}
@@ -260,9 +255,9 @@ export default function Home() {
             try {
               setSavingAdd(true);
               const created = await createTodo({
-                title,
+                task: title,
                 priority,
-                date: new Date(date).toISOString(),
+                date: new Date(date).toISOString().split('T')[0],
               });
               setTodos((prev) => [created, ...prev]);
               setOpenAdd(false);
@@ -277,12 +272,12 @@ export default function Home() {
         />
       </Modal>
 
-      {/* Confirm Delete Dialog */}
+      {/* ✅ Confirm Delete (now backend-based) */}
       <ConfirmDialog
         open={confirm.open}
         loading={confirm.loading}
         title='Delete To-Do'
-        description='Do you want to delete this?'
+        description='Are you sure you want to delete this task? This action cannot be undone.'
         confirmText='Delete'
         cancelText='Cancel'
         onCancel={() =>

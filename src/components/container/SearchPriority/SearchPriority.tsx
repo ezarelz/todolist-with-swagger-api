@@ -1,4 +1,7 @@
-type PriorityKey = 'ALL' | 'LOW' | 'MEDIUM' | 'HIGH';
+// src/components/container/SearchPriority/SearchPriority.tsx
+import type { Priority } from '../../../types/Todo';
+
+type PriorityKey = 'ALL' | Priority; // ✅ Now uses 'low' | 'medium' | 'high'
 
 type Props = {
   query: string;
@@ -62,7 +65,7 @@ export default function SearchPriority({
           value={prio}
           onChange={(e) => {
             const v = e.target.value as PriorityKey;
-            onPrio(v === 'LOW' || v === 'MEDIUM' || v === 'HIGH' ? v : 'ALL');
+            onPrio(v === 'low' || v === 'medium' || v === 'high' ? v : 'ALL');
           }}
           aria-label='Priority filter'
           title='Priority'
@@ -80,9 +83,9 @@ export default function SearchPriority({
           style={{ minWidth: 130 }}
         >
           <option value='ALL'>All</option>
-          <option value='LOW'>Low</option>
-          <option value='MEDIUM'>Medium</option>
-          <option value='HIGH'>High</option>
+          <option value='low'>Low</option>
+          <option value='medium'>Medium</option>
+          <option value='high'>High</option>
         </select>
 
         {/* caret kanan */}
